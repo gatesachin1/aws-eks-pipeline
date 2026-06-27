@@ -1,6 +1,6 @@
 # ShopK8s — Kubernetes CI/CD Pipeline
 
-> **Author:** Sachin Gate — [Sachin.Gate@elliotsystems.com](mailto:gatesachin1112@gmail.com)
+> **Author:** Sachin Gate — [gatesachin1112@gmail.com](mailto:gatesachin1112@gmail.com)
 
 A Node.js/Express demo application with a fully automated CI/CD pipeline using AWS CodeBuild, Amazon ECR, and Kubernetes.
 
