@@ -5,28 +5,29 @@ env:
     ECR_REGISTRY: "654654392564.dkr.ecr.us-east-1.amazonaws.com"
     ECR_REPO: "shopk8s"
     AWS_DEFAULT_REGION: "us-east-1"
+    CLUSTER_NAME: "eks-shopk8s"
 
 phases:
+  install:
+    commands:
+      - curl -LO "https://dl.k8s.io/release/$(curl -Ls https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+      - chmod +x kubectl && mv kubectl /usr/local/bin/
+      - kubectl version --client
+
   pre_build:
     commands:
-      - echo Fetching kubeconfig from SSM Parameter Store...
-      - aws ssm get-parameter --name "/shopk8s/kubeconfig" --with-decryption --region us-east-1 --query Parameter.Value --output text > /tmp/kubeconfig
-      - export KUBECONFIG=/tmp/kubeconfig
-      - echo Loading image tag from CI artifact...
+      - aws eks update-kubeconfig --name $CLUSTER_NAME --region $AWS_DEFAULT_REGION
       - cat image_tag.env
       - export $(cat image_tag.env)
-      - echo Deploying image tag $IMAGE_TAG
-      - kubectl version --client
+      - echo Deploying image $IMAGE_TAG
 
   build:
     commands:
-      - echo Updating deployment image...
-      - kubectl set image deployment/shopk8s shopk8s=654654392564.dkr.ecr.us-east-1.amazonaws.com/shopk8s:$IMAGE_TAG --kubeconfig=/tmp/kubeconfig
-      - echo Waiting for rollout to complete...
-      - kubectl rollout status deployment/shopk8s --timeout=120s --kubeconfig=/tmp/kubeconfig
+      - kubectl set image deployment/shopk8s shopk8s=$ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG
+      - kubectl rollout status deployment/shopk8s --timeout=120s
 
   post_build:
     commands:
       - echo Deployment completed on `date`
-      - kubectl get pods -l app=shopk8s --kubeconfig=/tmp/kubeconfig
-      - kubectl get svc shopk8s-svc --kubeconfig=/tmp/kubeconfig
+      - kubectl get pods -l app=shopk8s
+      - kubectl get svc shopk8s
